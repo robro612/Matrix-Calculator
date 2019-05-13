@@ -1,7 +1,8 @@
 #include <iostream>
 #include "apmatrix.h"
 #include <cmath>
-
+#include <cstdlib>
+#include <ctime>
 using namespace std;
 apmatrix<float> A,B,C,D,E,F,work;
 apmatrix<float> c0,c1,c2,c3,c4,c5,c6,c7,c8,c9,c10;
@@ -26,12 +27,15 @@ apmatrix<float> geteigenvalues(apmatrix<float> A, int times);
 apmatrix<float> projection(apmatrix<float> thi, apmatrix<float> ontothat);
 float dotprodvec(apmatrix<float> u, apmatrix<float> v);
 float vectormagnitude(apmatrix<float> vec);
+float pointpointDist(apmatrix<float> A, apmatrix<float> B);
+apmatrix<float> pointlineDist(apmatrix<float> point, apmatrix<float> linePoint, apmatrix<float> directionVec);
 void Swap(apmatrix<float> &in, int r1, int r2);
 void LinearComb(apmatrix<float> &in, int r1, int lead, int leadcol);
 void RowMultiply(apmatrix<float> &in, int lead, int leadcol);
 void SetMatrix(apmatrix<float> target, apmatrix<float> newMatrix);
 void testTheory(apmatrix<float> mat);
 apmatrix<float> LoadMatrix(int matrixNumber);
+float floatRand();
 int main()
 {
     int choice, cont;//, matrix_number;
@@ -140,7 +144,12 @@ int main()
         else if (choice == 9)
         {
             PrintMatrix(A);
-            testTheory(A);
+            //MakeQMatrix(A);
+//            PrintMatrix(A);
+//            PrintMatrix(B);
+//            PrintMatrix(C);
+//            cout<<"\n";
+//            PrintMatrix(pointlineDist(A,B,C));
         }
         cout<<"Would you like to continue? 0 for no, 1 for yes: \n";
         cin>>cont;
@@ -389,10 +398,11 @@ apmatrix<float> RowReduceMatrix(apmatrix<float> in)
                 }
             }
         }
-        //cout<<"\n";
-        //PrintMatrix(red);
-        //cout<<"\n";
+        cout<<"\n";
+        PrintMatrix(red);
+        cout<<"\n";
         lead++;
+        leadcol++;
     }
     cout<<"NOW IN SECOND LOOP \n";
     for (int p = 0; p < rows; p++)
@@ -421,7 +431,7 @@ apmatrix<float> RowReduceMatrix(apmatrix<float> in)
         }
     }
     cout<<"\n";
-    //PrintMatrix(red);
+    PrintMatrix(red);
     cout<<"\n";
     return red;
 }
@@ -669,8 +679,14 @@ apmatrix<float> QR(apmatrix<float> a, int times)
     apmatrix<float> R;
     for (int i = 0; i < times; i++)
     {
+        cout<<"A \n";
+        PrintMatrix(A);
         Q = MakeQMatrix(A);
+        cout<<"Q \n";
+        PrintMatrix(Q);
         R = MakeRMatrix(A,Q);
+        cout<<"R \n";
+        PrintMatrix(R);
         A = MultiplyMatricies(R, Q);
     }
     return A;
@@ -679,6 +695,7 @@ apmatrix<float> geteigenvalues(apmatrix<float> A, int times)
 {
     apmatrix<float> eigenvalues;
     A = QR(A, times);
+    PrintMatrix(A);
     eigenvalues.resize(A.numrows(), 1);
     for (int i = 0; i < A.numrows(); i++)
     {
@@ -686,3 +703,74 @@ apmatrix<float> geteigenvalues(apmatrix<float> A, int times)
     }
     return eigenvalues;
 }
+float pointpointDist(apmatrix<float> A, apmatrix<float> B)
+//should take in an n x 1 matrix representing the two points
+{
+    if (A.numrows() != B.numrows() || A.numcols() != B.numcols())
+    {
+        cout<<"Error, not matching dimensions" <<"\n";
+        return -1;
+    }
+    else
+    {
+        float temp = 0;
+        for (int i = 0; i < A.numrows(); i++)
+        {
+            temp += pow((A[i][0] - B[i][0]),2);
+        }
+        temp = pow(temp,0.5);
+        //cout<<"distance: " << temp <<"\n";
+        return temp;
+    }
+}
+apmatrix<float> pointlineDist(apmatrix<float> point, apmatrix<float> linePoint, apmatrix<float> lineVec)
+{
+    //So you create a vector going from point to linepoint called V, which wont be the shortest
+    //then you project this onto the direction vector to find the portion of the generated vector V that is unnecessary
+    //then you subtract this from the vector V, which results in only the shortest portion needed to span from point to line
+
+    apmatrix<float> v = SubtractMatricies(linePoint, point);
+    apmatrix<float> badpart = projection(v, lineVec);
+    v = SubtractMatricies(v, badpart);
+    
+    //MACHINE LEARNING VERSION
+    /*
+    float init = floatRand();
+    float nudge = 0.001;
+    float learningRate = 0.05;
+    apmatrix<float> testplus;
+    apmatrix<float> testminus;
+    apmatrix<float> test = AddMatricies(linePoint, ScalarMultiplyMatrix(directionVec, init));
+    for(int i = 0; i < 1000000; i++)
+    {
+        cout<<i <<"\n";
+        testplus = AddMatricies(linePoint, ScalarMultiplyMatrix(directionVec, init+nudge));
+        testminus = AddMatricies(linePoint, ScalarMultiplyMatrix(directionVec, init-nudge));
+        if (pointpointDist(testplus, point) > pointpointDist(test, point) && pointpointDist(testminus, point) > pointpointDist(test, point))
+        {
+            break;
+            
+            return test;
+        }
+        else if(pointpointDist(testplus, point) < pointpointDist(test, point))
+        {
+            init += learningRate;
+            test = AddMatricies(linePoint, ScalarMultiplyMatrix(directionVec, init));
+        }
+        else if(pointpointDist(testminus, point) < pointpointDist(test, point))
+        {
+            init -= learningRate;
+            test = AddMatricies(linePoint, ScalarMultiplyMatrix(directionVec, init));
+        }
+    }
+    cout<<pointpointDist(test, point) <<"\n";
+    return test;
+}
+float floatRand()
+{
+    return float(rand()) / (float(RAND_MAX) + 1.0);
+}
+*/
+    return v;
+}
+
